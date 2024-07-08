@@ -1,0 +1,22 @@
+version: '3'
+services:
+  sum-service:
+    build: ./sum-service
+    ports:
+      - "3001:3001"
+  subtract-service:
+    build: ./subtract-service
+    ports:
+      - "3002:3002"
+  multiply-service:
+    build: ./multiply-service
+    ports:
+      - "3003:3003"
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - sum-service
+      - subtract-service
+      - multiply-service
