@@ -50,3 +50,28 @@ jobs:
         run: |
           docker-compose down
           docker-compose up -d
+
+  deploy-AWS:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set permissions for private key
+        run: |
+          echo "${{ secrets.AWS_PRIVATE_KEY }}" > key.pem
+          chmod 600 key.pem
+
+
+      - name: Pull Docker images
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.EC2_HOST }} 'sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator:1873861e9c9c96d1d20c26898cdfa9f4eae36b0f9df8740610011e5478202aba'
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.EC2_HOST }} 'sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator:952f0bde369b139b3341ab408eec354248d0af72773e1c5e299165c1c0dff598'
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.EC2_HOST }} 'sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator:3a2b7e5eb726f0f3c7a5b79221bceeef97ed13604cf8e8a56f4e372d09b32898'
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.EC2_HOST }} 'sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator:2a1cb71de51fc504c918cd700399cca90129598d60d87bfe5fe5f470d5388f4e'
+
+      - name: Run new containers
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.EC2_HOST }} 'sudo docker run -d --name frontend -p 3000:3000 ${{ secrets.DOCKER_USERNAME }}/calculator:1873861e9c9c96d1d20c26898cdfa9f4eae36b0f9df8740610011e5478202aba'
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.EC2_HOST }} 'sudo docker run -d --name subtract-service -p 3002:3002 ${{ secrets.DOCKER_USERNAME }}/calculator:952f0bde369b139b3341ab408eec354248d0af72773e1c5e299165c1c0dff598'
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.EC2_HOST }} 'sudo docker run -d --name sum-service -p 3001:3001 ${{ secrets.DOCKER_USERNAME }}/calculator:3a2b7e5eb726f0f3c7a5b79221bceeef97ed13604cf8e8a56f4e372d09b32898'
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.EC2_HOST }} 'sudo docker run -d --name multiply-service -p 3003:3003 ${{ secrets.DOCKER_USERNAME }}/calculator:2a1cb71de51fc504c918cd700399cca90129598d60d87bfe5fe5f470d5388f4e'
